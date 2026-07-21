@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resume Keyword Matcher</title>
+<meta name="description" content="Paste your resume and a job description to get an honest keyword-overlap analysis. Runs entirely in your browser, nothing is uploaded. No tracking, no signup, no external dependencies.">
+<link rel="canonical" href="https://0xelitesystem.github.io/resume-keyword-matcher/">
+<meta property="og:title" content="Resume Keyword Matcher">
+<meta property="og:description" content="Honest keyword-overlap analysis between your resume and a job description. Fully client-side, nothing leaves your browser.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://0xelitesystem.github.io/resume-keyword-matcher/">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Resume Keyword Matcher",
+  "description": "Paste your resume and a job description to get an honest keyword-overlap analysis. Runs entirely in your browser, nothing is uploaded.",
+  "url": "https://0xelitesystem.github.io/resume-keyword-matcher/",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Any",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "author": { "@type": "Person", "name": "0xelitesystem", "url": "https://elitesystem.ai" }
+}
+</script>
+<style>
+:root {
+  --bg: #fafaf6;
+  --surface: #ffffff;
+  --ink: #0a1d1e;
+  --ink-soft: #2c4a4c;
+  --rule: #c8d4d3;
+  --teal: #0f5c60;
+  --teal-deep: #0a4548;
+  --gold: #b07d2a;
+  --gold-deep: #8a611f;
+  --ok: #1a5c2e;
+  --warn: #8a5a00;
+  --err: #8b1a1a;
+  --code-bg: #f0ebe1;
+  --matched: #1a5c2e;
+  --missing: #8b1a1a;
+  --matched-bg: #e4efe6;
+  --missing-bg: #f6e7e7;
+}
+[data-theme="dark"] {
+  --bg: #0c1c1d;
+  --surface: #14292a;
+  --ink: #e8ebe6;
+  --ink-soft: #b0c0bd;
+  --rule: #2a4042;
+  --teal: #4ab4ba;
+  --teal-deep: #6dc8ce;
+  --gold: #d4a155;
+  --gold-deep: #e6b876;
+  --ok: #6dd380;
+  --warn: #d4a155;
+  --err: #e88080;
+  --code-bg: #0a1718;
+  --matched: #6dd380;
+  --missing: #e88080;
+  --matched-bg: #12331c;
+  --missing-bg: #3a1717;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: ui-serif, Georgia, "Times New Roman", serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  line-height: 1.55;
+}
+.wrap { max-width: 1100px; margin: 0 auto; }
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 2px solid var(--teal);
+  padding-bottom: 1rem;
+  margin-bottom: 2rem;
+}
+h1 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--teal);
+}
+.tag {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.75rem;
+  color: var(--gold-deep);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+[data-theme="dark"] .tag { color: var(--gold); }
+.theme-btn {
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--ink-soft);
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.theme-btn:hover { border-color: var(--teal); color: var(--teal); }
+.lede {
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+  margin-bottom: 1.75rem;
+  max-width: 62ch;
+}
+.input-box {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  padding: 1.25rem;
+  margin-bottom: 1.75rem;
+  border-radius: 3px;
+}
+.input-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  display: block;
+  margin-bottom: 0.5rem;
+}
+textarea {
+  width: 100%;
+  min-height: 260px;
+  background: var(--code-bg);
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  padding: 0.85rem;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  resize: vertical;
+  border-radius: 2px;
+}
+textarea:focus { outline: 2px solid var(--teal); outline-offset: 1px; }
+.input-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+button {
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.6rem 1.1rem;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  border-radius: 2px;
+}
+button:hover { border-color: var(--teal); }
+button:focus-visible { outline: 2px solid var(--teal); outline-offset: 1px; }
+button.primary {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: var(--surface);
+  font-weight: 600;
+}
+[data-theme="dark"] button.primary {
+  color: var(--bg) !important;
+}
+button.primary:hover { background: var(--teal-deep); border-color: var(--teal-deep); }
+.kbd-hint {
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+.privacy-note {
+  font-size: 0.78rem;
+  color: var(--gold-deep);
+  margin-top: 0.75rem;
+}
+[data-theme="dark"] .privacy-note { color: var(--gold); }
+.results { display: none; }
+.results.show { display: block; }
+.section {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  border-radius: 3px;
+}
+.section-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin-bottom: 0.85rem;
+}
+.score-row {
+  display: flex;
+  align-items: baseline;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+.score-num {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--teal);
+  line-height: 1;
+}
+.score-label {
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+.score-bar {
+  height: 0.5rem;
+  background: var(--code-bg);
+  border-radius: 2px;
+  margin-top: 1rem;
+  overflow: hidden;
+}
+.score-fill {
+  height: 100%;
+  background: var(--teal);
+  width: 0;
+  transition: width 0.4s ease;
+}
+.formula {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  margin-top: 0.85rem;
+  font-style: italic;
+}
+.honest-note {
+  margin-top: 1rem;
+  padding: 0.85rem;
+  background: var(--code-bg);
+  border-left: 3px solid var(--gold);
+  border-radius: 2px;
+  font-size: 0.82rem;
+  color: var(--ink);
+}
+.honest-note strong { color: var(--gold-deep); }
+[data-theme="dark"] .honest-note strong { color: var(--gold); }
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+.chip {
+  display: inline-block;
+  padding: 0.25rem 0.65rem;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.78rem;
+  border-radius: 2px;
+  border: 1px solid var(--rule);
+}
+.chip-matched {
+  background: var(--matched-bg);
+  color: var(--matched);
+  border-color: var(--matched);
+}
+.chip .count { opacity: 0.7; }
+.missing-list {
+  display: grid;
+  grid-template-columns: 1fr max-content max-content;
+  gap: 0.45rem 1.25rem;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.82rem;
+  align-items: center;
+}
+.missing-term { color: var(--missing); font-weight: 600; word-break: break-word; }
+.missing-count { color: var(--ink-soft); }
+.badge {
+  display: inline-block;
+  font-family: ui-serif, Georgia, serif;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.1rem 0.5rem;
+  border-radius: 2px;
+  background: var(--missing-bg);
+  color: var(--missing);
+  border: 1px solid var(--missing);
+}
+.badge-empty { visibility: hidden; }
+.sub-note {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  margin-bottom: 0.85rem;
+}
+.empty-msg {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.error-msg {
+  color: var(--err);
+  font-size: 0.85rem;
+  margin-top: 0.85rem;
+  padding: 0.65rem;
+  background: var(--code-bg);
+  border-left: 3px solid var(--err);
+  border-radius: 2px;
+}
+footer {
+  margin-top: 3rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+footer a { color: var(--teal); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 720px) {
+  body { padding: 1rem 0.75rem; }
+  h1 { font-size: 1.4rem; }
+  .input-grid { grid-template-columns: 1fr; }
+  textarea { min-height: 180px; }
+  .missing-list { grid-template-columns: 1fr max-content; }
+  .missing-list .badge, .missing-list .badge-empty { grid-column: 1 / -1; justify-self: start; margin-top: -0.25rem; }
+  .missing-list .badge-empty { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>Resume Keyword Matcher</h1>
+    <div class="tag">Honest keyword overlap, in your browser</div>
+  </div>
+  <button class="theme-btn" id="theme-toggle" type="button">Dark</button>
+</header>
+
+<p class="lede">Paste your resume and a job description. The tool compares significant terms and phrases from the job description against your resume and shows what overlaps and what is missing. Everything runs locally. Nothing is uploaded, which matters here because resumes are full of personal data.</p>
+
+<div class="input-box">
+  <div class="input-grid">
+    <div>
+      <label for="resume-input">Your resume (plain text)</label>
+      <textarea id="resume-input" placeholder="Paste your resume text here..." spellcheck="false" autocapitalize="off" autocorrect="off"></textarea>
+    </div>
+    <div>
+      <label for="jd-input">Job description</label>
+      <textarea id="jd-input" placeholder="Paste the job description here..." spellcheck="false" autocapitalize="off" autocorrect="off"></textarea>
+    </div>
+  </div>
+  <div class="input-row">
+    <button class="primary" id="analyze-btn" type="button">Analyze</button>
+    <button id="example-btn" type="button">Load example</button>
+    <button id="clear-btn" type="button">Clear</button>
+    <span class="kbd-hint">Ctrl+Enter / Cmd+Enter to analyze</span>
+  </div>
+  <div class="privacy-note">Everything stays in this browser tab. Your resume and the job description are never sent to any server. No analytics, no storage, no requests. Verify in DevTools if you like.</div>
+</div>
+
+<div id="error-box"></div>
+
+<div class="results" id="results" aria-live="polite">
+  <div class="section">
+    <div class="section-title">Keyword-overlap score</div>
+    <div class="score-row">
+      <div class="score-num" id="score-num">0%</div>
+      <div class="score-label" id="score-detail"></div>
+    </div>
+    <div class="score-bar"><div class="score-fill" id="score-fill"></div></div>
+    <div class="formula" id="formula-text"></div>
+    <div class="honest-note"><strong>Read this before acting on the score.</strong> Keyword matching is a heuristic. Real applicant tracking systems vary widely in how they parse and rank resumes, and this score is not an ATS pass/fail prediction or any kind of guarantee. Stuffing keywords you cannot back up is counterproductive: it gets you interviews you will fail. Only add a missing term if it truthfully describes work you have actually done.</div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Matched keywords (in both)</div>
+    <div class="sub-note">Terms and phrases from the job description that also appear in your resume. Count = times mentioned in the job description.</div>
+    <div class="chips" id="matched-chips"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Missing keywords (in the job description, not your resume)</div>
+    <div class="sub-note">Ranked by how often the job description repeats them, since repeated terms usually matter more. Terms flagged <span class="badge">requirements</span> appear in lines that look like hard requirements (lines containing "required", "must", "you have", "qualifications"). Review those first, and only add ones that are honestly true of you.</div>
+    <div class="missing-list" id="missing-list"></div>
+  </div>
+</div>
+
+<footer>
+  <div>Resume Keyword Matcher. Open source, MIT licensed. <a href="https://github.com/0xelitesystem/resume-keyword-matcher" target="_blank" rel="noopener">View source</a>.</div>
+  <div>More tools at <a href="https://elitesystem.ai" target="_blank" rel="noopener">elitesystem.ai</a>.</div>
+</footer>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+// Theme toggle
+const themeBtn = $("theme-toggle");
+function setTheme(t) {
+  document.documentElement.setAttribute("data-theme", t);
+  themeBtn.textContent = t === "dark" ? "Light" : "Dark";
+}
+themeBtn.addEventListener("click", () => {
+  const cur = document.documentElement.getAttribute("data-theme") || "light";
+  setTheme(cur === "dark" ? "light" : "dark");
+});
+setTheme("light");
+
+// ===== core analysis (pure functions, no DOM) =====
+
+// Common English stopwords.
+const STOP_EN = new Set(("a about above after again against all along also am an and any are around as at be because been before being below between both but by can could did do does doing done down during each either etc few for from further had has have having he her here hers him his how i if in into is it its itself just like may me might more most much must my no nor not now of off on once one only onto or other our ours out over own per she should since so some such than that the their theirs them then there these they this those through to too under until up upon us very was we were what when where whether which while who whom why will with within without would you your yours").split(" "));
+
+// Resume and job-post boilerplate. Edit this list to taste; anything here
+// is treated as noise rather than a keyword.
+const STOP_BOILER = new Set(("ability able applicant apply background best bonus build building built candidate career company core create created creating culture currently day description detail develop developed developing dynamic effective employee employer environment equal excellent expect experience experienced familiar familiarity fast field following get good great grasp group help helping high highly ideal impact improve improved improving include included includes including job join junior knowledge learn level looking love make making member mission month need needed nice offer opportunity paced part passion people perform plus position preferred prior proficiency proficient proven qualification range record related required requirement responsibility responsible role seeking senior set skill solid strong success successful talented team thing time today understand understanding value want way week willing work worked working world year").split(" "));
+
+// Small alias map so common variants count as the same term.
+const ALIAS = {
+  js: "javascript",
+  ts: "typescript",
+  k8s: "kubernetes",
+  postgres: "postgresql",
+  reactjs: "react",
+  vuejs: "vue",
+  restful: "rest"
+};
+
+// Normalizations applied to raw text before tokenizing, so multi-part
+// spellings become one token on both sides.
+const PRE_REPLACE = [
+  [/\bci\s*\/\s*cd\b/gi, "cicd"],
+  [/\bnode\.js\b/gi, "nodejs"],
+  [/\bnext\.js\b/gi, "nextjs"],
+  [/\breact\.js\b/gi, "reactjs"],
+  [/\bvue\.js\b/gi, "vuejs"],
+  [/\bfront[\s-]?end\b/gi, "frontend"],
+  [/\bback[\s-]?end\b/gi, "backend"],
+  [/\bfull[\s-]?stack\b/gi, "fullstack"]
+];
+
+// Terms that end in "s" but are not plurals; never strip these.
+const STEM_EXC = new Set(["aws", "devops", "jenkins", "kubernetes", "analytics", "rails", "windows", "canvas", "cors", "https", "sass", "macos", "kudos", "sales"]);
+
+const DISPLAY_OVERRIDES = { cicd: "CI/CD", nodejs: "Node.js", nextjs: "Next.js", reactjs: "React", vuejs: "Vue" };
+
+// Simple plural folding: apis -> api, databases -> database, queries -> query.
+function stem(t) {
+  if (STEM_EXC.has(t) || /js$/.test(t)) return t;
+  if (t.length > 4 && /ies$/.test(t)) return t.slice(0, -3) + "y";
+  if (t.length > 4 && /(sses|shes|ches|xes|zes)$/.test(t)) return t.slice(0, -2);
+  if (t.length > 3 && /s$/.test(t) && !/(ss|us|is)$/.test(t)) return t.slice(0, -1);
+  return t;
+}
+
+function normalizeToken(raw) {
+  let t = raw.toLowerCase();
+  if (ALIAS[t]) t = ALIAS[t];
+  return stem(t);
+}
+
+function isContentWord(norm) {
+  if (norm.length < 2) return false;
+  if (!/[a-z]/.test(norm)) return false;
+  return !STOP_EN.has(norm) && !STOP_BOILER.has(norm);
+}
+
+// Split a line into token runs. Punctuation (except hyphens) breaks a run,
+// so phrases never span across commas, slashes, or sentence boundaries.
+function tokenizeLine(line) {
+  const segments = line.split(/[,.;:!?()\[\]{}|"'\/\\&]+/);
+  const runs = [];
+  for (const seg of segments) {
+    const raws = seg.match(/[a-zA-Z0-9+#][a-zA-Z0-9+#]*/g) || [];
+    if (raws.length) runs.push(raws.map((r) => ({ raw: r, norm: normalizeToken(r) })));
+  }
+  return runs;
+}
+
+function applyPreReplace(text) {
+  let out = text;
+  for (const [re, rep] of PRE_REPLACE) out = out.replace(re, rep);
+  return out;
+}
+
+const REQ_TRIGGER = /(required|requirements|must|you have|you'll have|qualifications|nice to have)/i;
+
+// Lines that look like hard-requirement lines: either they contain a trigger
+// word themselves, or they sit under a requirements-looking section header.
+function markPriorityLines(lines) {
+  let inSection = false;
+  return lines.map((line) => {
+    const trimmed = line.trim();
+    const words = trimmed.split(/\s+/).filter(Boolean).length;
+    const headerish = trimmed.length > 0 && trimmed.length < 60 && words <= 6 && !/^[-*•]/.test(trimmed);
+    const hasTrigger = REQ_TRIGGER.test(trimmed);
+    if (headerish) inSection = hasTrigger;
+    return hasTrigger || inSection;
+  });
+}
+
+// Build the set of every 1..3 word normalized sequence in a text.
+function buildNgramSet(text) {
+  const set = new Set();
+  for (const line of applyPreReplace(text).split(/\r?\n/)) {
+    for (const run of tokenizeLine(line)) {
+      const norms = run.map((t) => t.norm);
+      for (let i = 0; i < norms.length; i++) {
+        for (let n = 1; n <= 3 && i + n <= norms.length; n++) {
+          set.add(norms.slice(i, i + n).join(" "));
+        }
+      }
+    }
+  }
+  return set;
+}
+
+// Extract significant terms from the job description: single content words
+// plus 2 to 3 word phrases made entirely of content words.
+function extractJdTerms(text, resumeSet) {
+  const terms = new Map(); // key -> { count, display, priority, n }
+  const lines = applyPreReplace(text).split(/\r?\n/);
+  const priority = markPriorityLines(lines);
+  lines.forEach((line, li) => {
+    for (const run of tokenizeLine(line)) {
+      for (let i = 0; i < run.length; i++) {
+        for (let n = 1; n <= 3 && i + n <= run.length; n++) {
+          const slice = run.slice(i, i + n);
+          if (!slice.every((t) => isContentWord(t.norm))) continue;
+          const key = slice.map((t) => t.norm).join(" ");
+          const display = n === 1 && DISPLAY_OVERRIDES[slice[0].norm]
+            ? DISPLAY_OVERRIDES[slice[0].norm]
+            : slice.map((t) => DISPLAY_OVERRIDES[t.norm.toLowerCase()] || t.raw).join(" ");
+          if (!terms.has(key)) terms.set(key, { count: 0, display, priority: false, n });
+          const rec = terms.get(key);
+          rec.count++;
+          if (priority[li]) rec.priority = true;
+        }
+      }
+    }
+  });
+  return cleanupTerms(terms, resumeSet);
+}
+
+// Reduce noise: drop a phrase when a longer kept phrase fully contains it
+// with the same count, and drop a single word when it only ever appears
+// inside kept phrases. Exception: keep the single word when the resume has
+// it but misses the phrase, so partial credit stays visible.
+function cleanupTerms(terms, resumeSet) {
+  const entries = [...terms.entries()];
+  const kept = new Map(entries);
+  // Bigrams subsumed by trigrams with equal count.
+  for (const [key, rec] of entries) {
+    if (rec.n !== 2) continue;
+    for (const [k3, r3] of entries) {
+      if (r3.n === 3 && (" " + k3 + " ").includes(" " + key + " ") && r3.count >= rec.count) {
+        kept.delete(key);
+        break;
+      }
+    }
+  }
+  // Unigrams that only occur inside kept phrases.
+  for (const [key, rec] of entries) {
+    if (rec.n !== 1) continue;
+    let phraseCount = 0;
+    const containing = [];
+    for (const [kp, rp] of kept.entries()) {
+      if (rp.n > 1 && (" " + kp + " ").includes(" " + key + " ")) {
+        phraseCount += rp.count;
+        containing.push(kp);
+      }
+    }
+    if (phraseCount < rec.count) continue;
+    const partialCredit = resumeSet.has(key) && containing.some((kp) => !resumeSet.has(kp));
+    if (!partialCredit) kept.delete(key);
+  }
+  return kept;
+}
+
+// The whole analysis, pure: returns { score, matched, missing, totalTerms }.
+function analyzeTexts(resumeText, jdText) {
+  const resumeSet = buildNgramSet(resumeText);
+  const jdTerms = extractJdTerms(jdText, resumeSet);
+  const matched = [];
+  const missing = [];
+  for (const [key, rec] of jdTerms.entries()) {
+    const item = { key, display: rec.display, count: rec.count, priority: rec.priority };
+    if (resumeSet.has(key)) matched.push(item);
+    else missing.push(item);
+  }
+  const byRank = (a, b) => b.count - a.count || (b.priority - a.priority) || a.display.localeCompare(b.display);
+  matched.sort(byRank);
+  missing.sort((a, b) => b.count - a.count || (b.priority - a.priority) || a.display.localeCompare(b.display));
+  const total = matched.length + missing.length;
+  const score = total ? Math.round((matched.length / total) * 100) : 0;
+  return { score, matched, missing, totalTerms: total };
+}
+
+// ===== end core =====
+
+function escapeHtml(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function showError(msg) {
+  $("error-box").innerHTML = '<div class="error-msg">' + escapeHtml(msg) + "</div>";
+  $("results").classList.remove("show");
+}
+
+function runAnalysis() {
+  $("error-box").innerHTML = "";
+  const resumeText = $("resume-input").value.trim();
+  const jdText = $("jd-input").value.trim();
+  if (!resumeText || !jdText) {
+    showError("Paste both a resume and a job description, then hit Analyze.");
+    return;
+  }
+  const r = analyzeTexts(resumeText, jdText);
+  if (r.totalTerms === 0) {
+    showError("No significant terms found in the job description. Is it real text?");
+    return;
+  }
+
+  $("score-num").textContent = r.score + "%";
+  $("score-detail").textContent = r.matched.length + " of " + r.totalTerms + " significant job-description terms found in your resume.";
+  $("score-fill").style.width = r.score + "%";
+  $("formula-text").textContent = "Formula: matched terms divided by total significant terms in the job description, times 100. Each unique term or phrase counts once. " + r.matched.length + " / " + r.totalTerms + " = " + r.score + "%.";
+
+  const chipsEl = $("matched-chips");
+  chipsEl.innerHTML = "";
+  if (r.matched.length === 0) {
+    chipsEl.innerHTML = '<div class="empty-msg">No overlap found.</div>';
+  } else {
+    for (const m of r.matched) {
+      const chip = document.createElement("span");
+      chip.className = "chip chip-matched";
+      chip.innerHTML = escapeHtml(m.display) + ' <span class="count">(' + m.count + ")</span>";
+      chipsEl.appendChild(chip);
+    }
+  }
+
+  const missEl = $("missing-list");
+  missEl.innerHTML = "";
+  if (r.missing.length === 0) {
+    missEl.innerHTML = '<div class="empty-msg" style="grid-column: 1 / -1;">Nothing missing. Every significant term in the job description appears in your resume.</div>';
+  } else {
+    for (const m of r.missing) {
+      const term = document.createElement("div");
+      term.className = "missing-term";
+      term.textContent = m.display;
+      const count = document.createElement("div");
+      count.className = "missing-count";
+      count.textContent = "x" + m.count;
+      const badge = document.createElement("div");
+      if (m.priority) {
+        badge.innerHTML = '<span class="badge">requirements</span>';
+      } else {
+        badge.innerHTML = '<span class="badge badge-empty">requirements</span>';
+      }
+      missEl.appendChild(term);
+      missEl.appendChild(count);
+      missEl.appendChild(badge);
+    }
+  }
+
+  $("results").classList.add("show");
+}
+
+// Example data: a short resume and job description that demonstrate both
+// matched terms and missing ones (including a phrase and an alias).
+const EXAMPLE_RESUME = "Jordan Reyes\nSoftware Developer, Richmond VA\n\nSummary\nFull stack developer focused on shipping. Built and maintained production web apps end to end.\n\nSkills\nJavaScript, TypeScript, React, Node.js, Express, PostgreSQL, Docker, Git, REST APIs, CI/CD, unit testing, agile\n\nExperience\nSoftware Developer, Acme Logistics (2023 to 2026)\n- Built a customer portal in React and TypeScript serving 12k monthly users\n- Designed REST APIs in Node.js backed by PostgreSQL\n- Set up CI/CD pipelines with Docker, cutting deploy time from 40 minutes to 6\n- Wrote unit tests and led code review for a group of 4 developers";
+
+const EXAMPLE_JD = "Senior Frontend Engineer\n\nAbout the role\nWe build data products for logistics teams. You will own features from design to production.\n\nWhat you will do\n- Ship features in React and TypeScript\n- Work with our machine learning team to surface predictions in the UI\n- Deploy services to Kubernetes on AWS\n- Improve our GraphQL API layer\n\nRequirements\n- 4+ years building web applications with React and TypeScript\n- Must have production experience with Kubernetes (k8s) and AWS\n- You have worked with GraphQL and PostgreSQL\n- Familiarity with machine learning workflows is a plus\n- Solid grasp of CI/CD and Docker";
+
+$("example-btn").addEventListener("click", () => {
+  $("resume-input").value = EXAMPLE_RESUME;
+  $("jd-input").value = EXAMPLE_JD;
+  runAnalysis();
+});
+
+$("clear-btn").addEventListener("click", () => {
+  $("resume-input").value = "";
+  $("jd-input").value = "";
+  $("results").classList.remove("show");
+  $("error-box").innerHTML = "";
+});
+
+$("analyze-btn").addEventListener("click", runAnalysis);
+
+for (const id of ["resume-input", "jd-input"]) {
+  $(id).addEventListener("keydown", (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") runAnalysis();
+  });
+}
+</script>
+</body>
+</html>
