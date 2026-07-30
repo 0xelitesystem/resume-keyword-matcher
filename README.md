@@ -44,6 +44,10 @@ Each unique term or phrase counts once toward the score regardless of how often 
 
 Everything runs in your browser. Your resume and the job description never leave your machine: no requests, no analytics, no storage. This matters more than usual here, because resumes contain your name, address, phone number, and work history. Verify by opening DevTools and watching the network tab while you analyze.
 
+## More
+
+Part of a catalog of single-file browser tools and plain-language references, all MIT licensed and dependency-free: [0xelitesystem.github.io](https://0xelitesystem.github.io/). Built by [elitesystem.ai](https://elitesystem.ai).
+
 ## License
 
 MIT. Copyright 0xelitesystem 2026.
