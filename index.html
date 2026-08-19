@@ -499,7 +499,7 @@ function markPriorityLines(lines) {
   return lines.map((line) => {
     const trimmed = line.trim();
     const words = trimmed.split(/\s+/).filter(Boolean).length;
-    const headerish = trimmed.length > 0 && trimmed.length < 60 && words <= 6 && !/^[-*•]/.test(trimmed);
+    const headerish = trimmed.length > 0 && trimmed.length < 60 && words <= 6 && !/^[-*&bull;]/.test(trimmed);
     const hasTrigger = REQ_TRIGGER.test(trimmed);
     if (headerish) inSection = hasTrigger;
     return hasTrigger || inSection;
