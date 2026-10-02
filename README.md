@@ -2,9 +2,14 @@
 
 Paste your resume and a job description, get an honest keyword-overlap analysis. One HTML file, no server, no tracking, no external dependencies. Works offline.
 
-## Live demo
+**Live demo:** https://0xelitesystem.github.io/resume-keyword-matcher/
 
-https://0xelitesystem.github.io/resume-keyword-matcher/
+## Use
+
+1. Paste your resume as plain text into "Your resume".
+2. Paste the job description into "Job description".
+3. Click Analyze, or press Ctrl+Enter / Cmd+Enter. "Load example" fills both boxes with a sample.
+4. Read the score, then work through the Missing list, starting with terms flagged as hard requirements.
 
 ## Features
 
@@ -40,9 +45,28 @@ Each unique term or phrase counts once toward the score regardless of how often 
 - **Not a guarantee.** A high score does not mean you pass any screen, and a low score does not mean you fail one.
 - **Not an invitation to keyword-stuff.** Adding terms you cannot back up in an interview is counterproductive. Use the missing list as a checklist of things to mention only if they truthfully describe work you have done.
 
+## Why this exists
+
+A scanner that runs on a server needs your resume uploaded, which hands over your name, phone number and work history. This one is a single HTML file that does the keyword comparison in your browser and states its scoring formula openly. No tracking, no account. MIT licensed.
+
 ## Privacy
 
 Everything runs in your browser. Your resume and the job description never leave your machine: no requests, no analytics, no storage. This matters more than usual here, because resumes contain your name, address, phone number, and work history. Verify by opening DevTools and watching the network tab while you analyze.
+
+One exception: if you click the theme toggle, your light or dark choice is saved in your browser's localStorage under the key `theme`. Nothing you type is stored.
+
+## Run locally
+
+```bash
+git clone https://github.com/0xelitesystem/resume-keyword-matcher
+cd resume-keyword-matcher
+```
+
+Open `index.html` in any browser. Or serve the folder with `python -m http.server 8000` and visit http://localhost:8000/.
+
+## Build
+
+No build step. The whole tool is one `index.html` file with its CSS and JavaScript inline.
 
 ## More
 
